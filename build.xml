@@ -1,0 +1,171 @@
+<project name="lastpass-jira-saml" default="all" basedir="."
+    xmlns:ivy="antlib:org.apache.ivy.ant">
+    <description>LastPass SAML JIRA integration</description>
+    <property environment="env" />
+    <property name="version" value="0.1.0"/>
+    <property name="classes.dir" value="classes"/>
+    <property name="source.dir" value="src"/>
+    <property name="output.dir" value="out"/>
+    <property name="conf.dir" value="conf"/>
+    <property name="output.jar" value="lastpass-jira-saml-${version}.jar"/>
+    <property name="jira.home.dir" value="/opt/atlassian/jira"/>
+    <property name="DESTDIR" value=""/>
+    <property name="pkgtype" value="deb"/>
+    <property name="fpm.excludes" value=""/>
+
+    <target name="resolve" description="--> retrieve dependencies with ivy">
+        <ivy:retrieve />
+    </target>
+
+    <path id="build.compile.classpath">
+        <fileset dir="lib" includes="*.jar"/>
+        <!-- needed for atlassian classes -->
+        <pathelement location="${jira.home.dir}/atlassian-jira/WEB-INF/classes"/>
+        <fileset dir="${jira.home.dir}/atlassian-jira/WEB-INF/lib" includes="*.jar"/>
+    </path>
+
+    <target name="all">
+        <antcall target="tar"/>
+    </target>
+
+    <target name="deps" depends="init-ivy,resolve" />
+
+    <target name="compile">
+        <mkdir dir="${classes.dir}"/>
+        <javac
+            srcdir="${source.dir}"
+            destdir="${classes.dir}"
+            debug="true"
+            includeantruntime="false"
+            classpathref="build.compile.classpath" >
+            <compilerarg line="-Xlint:unchecked -Xlint:finally -Xlint:fallthrough" />
+        </javac>
+    </target>
+
+    <target name="jar" depends="deps,compile">
+        <mkdir dir="${output.dir}" />
+        <jar destfile="${output.dir}/${output.jar}">
+            <fileset dir="${classes.dir}"/>
+            <zipfileset includes="**/*.class" src="lib/lastpass-saml-sdk-0.1.0.jar"/>
+        </jar>
+    </target>
+
+    <target name="fpm">
+        <antcall target="__install">
+          <param name="DESTDIR" value="pkg-stage"/>
+        </antcall>
+        <exec executable="fpm">
+            <arg value="-s"/>
+            <arg value="dir"/>
+            <arg value="-t"/>
+            <arg value="${pkgtype}"/>
+            <arg value="--config-files"/>
+            <arg value="opt/atlassian/jira/atlassian-jira/WEB-INF/classes/seraph-config.xml"/>
+            <arg value="--config-files"/>
+            <arg value="opt/atlassian/jira/idp-metadata.xml.sample"/>
+            <arg value="--config-files"/>
+            <arg value="opt/atlassian/jira/sp-metadata.xml.sample"/>
+            <arg value="--after-install"/>
+            <arg value="scripts/post-pkg-install.sh"/>
+            <arg value="-C"/>
+            <arg value="pkg-stage"/>
+            <arg value="-v"/>
+            <arg value="${version}"/>
+            <arg value="-n"/>
+            <arg value="${ant.project.name}"/>
+            <arg line="${fpm.excludes}"/>
+            <arg value="."/>
+        </exec>
+    </target>
+
+    <target name="deb">
+        <antcall target="fpm">
+            <param name="fpm.excludes" value="-x install.sh"/>
+            <param name="pkgtype" value="deb"/>
+        </antcall>
+    </target>
+
+    <target name="rpm">
+        <antcall target="fpm">
+            <param name="fpm.excludes" value="-x install.sh"/>
+            <param name="pkgtype" value="rpm"/>
+        </antcall>
+    </target>
+
+    <target name="tar">
+        <antcall target="__install">
+          <param name="DESTDIR" value="${output.dir}/${ant.project.name}-${version}/"/>
+        </antcall>
+        <exec executable="tar">
+            <arg value="czvf"/>
+            <arg value="${output.dir}/${ant.project.name}-${version}.tar.gz"/>
+            <arg value="-C"/>
+            <arg value="${output.dir}"/>
+            <arg value="${ant.project.name}-${version}/"/>
+        </exec>
+        <delete dir="${output.dir}/${ant.project.name}-${version}/"/>
+    </target>
+
+    <target name="__install" depends="jar">
+        <mkdir dir="${DESTDIR}${jira.home.dir}/atlassian-jira/WEB-INF/classes"/>
+        <mkdir dir="${DESTDIR}${jira.home.dir}/atlassian-jira/WEB-INF/lib"/>
+        <mkdir dir="${DESTDIR}${jira.home.dir}/lib"/>
+
+        <copy todir="${DESTDIR}${jira.home.dir}/">
+            <fileset dir="conf" includes="*.sample"/>
+        </copy>
+
+        <copy todir="${DESTDIR}${jira.home.dir}/atlassian-jira/">
+            <fileset dir="web" includes="*.jsp"/>
+        </copy>
+
+        <!-- use cp to preserve permissions here -->
+        <exec executable="cp">
+            <arg value="scripts/install.sh" />
+            <arg value="${DESTDIR}/" />
+        </exec>
+
+        <copy todir="${DESTDIR}${jira.home.dir}/atlassian-jira/WEB-INF/lib/"
+            file="${output.dir}/${output.jar}"/>
+
+        <copy todir="${DESTDIR}${jira.home.dir}/atlassian-jira/WEB-INF/classes/"
+            file="${conf.dir}/seraph-config.xml"/>
+
+        <copy todir="${DESTDIR}${jira.home.dir}/lib/">
+            <fileset dir="lib">
+                <include name="opensaml-2.6.1.jar"/>
+                <include name="xmltooling-1.4.1.jar"/>
+                <include name="xmlsec-*.jar"/>
+                <include name="openws-1.5.1.jar"/>
+                <include name="joda-time-2.3.jar"/>
+                <include name="esapi-2.0.1.jar"/>
+            </fileset>
+        </copy>
+    </target>
+
+<!-- bootstrap ivy -->
+    <property name="ivy.install.version" value="2.2.0" />
+    <condition property="ivy.home" value="${env.IVY_HOME}">
+      <isset property="env.IVY_HOME" />
+    </condition>
+    <property name="ivy.home" value="${user.home}/.ant" />
+    <property name="ivy.jar.dir" value="${ivy.home}/lib" />
+    <property name="ivy.jar.file" value="${ivy.jar.dir}/ivy.jar" />
+
+    <target name="download-ivy" unless="offline">
+
+        <mkdir dir="${ivy.jar.dir}"/>
+        <get src="http://repo2.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar"
+             dest="${ivy.jar.file}" usetimestamp="true"/>
+    </target>
+
+    <target name="init-ivy" depends="download-ivy">
+        <path id="ivy.lib.path">
+            <fileset dir="${ivy.jar.dir}" includes="*.jar"/>
+        </path>
+        <taskdef resource="org/apache/ivy/ant/antlib.xml"
+                 uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path"/>
+    </target>
+<!-- end ivy setup -->
+
+</project>

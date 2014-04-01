@@ -1,0 +1,34 @@
+To install from source, first generate the installation
+package:
+
+  ant tar
+
+Then uncompress the resulting .tar.gz file from the out
+directory, and run the install script.
+
+Optionally, you may use the appropriate ant targets to
+generate debian or rpm packages.
+
+After installation, you will need to configure the
+Service Provider and Identity Provider settings in the
+jira directory.
+
+First rename them appropriately:
+
+    cd $ATLASSIAN_HOME
+    mv idp-metadata.xml.sample idp-metadata.xml
+    mv sp-metadata.xml.sample sp-metadata.xml
+
+And then edit the xml files to reflect your entity ID
+and URLs.
+
+If you are use the LastPass IdP service, you may
+download the idp-metadata.xml file for your organization
+here:
+
+    https://lastpass.com/enterprise_saml.php?metadata
+
+You will also need to configure the IdP with the service
+provider entity ID and the URLs.
+
+Once satisfied with the configuration, restart JIRA.
