@@ -119,10 +119,14 @@
             <fileset dir="web" includes="*.jsp"/>
         </copy>
 
-        <!-- use cp to preserve permissions here -->
-        <exec executable="cp">
+        <exec executable="sed" output="${DESTDIR}/install.sh">
+            <arg value="-e" />
+            <arg value="s,^defroot=.*,defroot=${jira.home.dir}," />
             <arg value="scripts/install.sh" />
-            <arg value="${DESTDIR}/" />
+        </exec>
+        <exec executable="chmod">
+            <arg value="775" />
+            <arg value="${DESTDIR}/install.sh" />
         </exec>
 
         <copy todir="${DESTDIR}${jira.home.dir}/atlassian-jira/WEB-INF/lib/"
