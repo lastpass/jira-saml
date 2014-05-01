@@ -26,11 +26,18 @@ import com.lastpass.saml.SPConfig;
 import com.lastpass.saml.AttributeSet;
 
 import java.security.Principal;
+import java.security.SecureRandom;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.atlassian.jira.user.util.UserUtil;
+import com.atlassian.jira.event.user.UserEventType;
+import com.atlassian.jira.component.ComponentAccessor;
+import com.atlassian.jira.JiraException;
+
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.util.List;
 
 import com.atlassian.jira.security.login.JiraSeraphAuthenticator;
 import java.net.URLEncoder;
@@ -54,6 +61,31 @@ public class SAMLAuthenticator extends JiraSeraphAuthenticator
         IdPConfig idpConfig = new IdPConfig(new File("idp-metadata.xml"));
         SPConfig spConfig = new SPConfig(new File("sp-metadata.xml"));
         client = new SAMLClient(spConfig, idpConfig);
+    }
+
+    /**
+     *  Generate a random password for new users.
+     *
+     *  The password is generally irrelevant since users will login
+     *  with SAML, but pick a long, secure one.
+     *
+     *  @param len number of characters in the password
+     */
+    private String generatePassword(int len)
+    {
+        int i;
+
+        char[] chars =
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()".toCharArray();
+        byte[] bytes = new byte[len];
+        char[] pw = new char[len];
+
+        new SecureRandom().nextBytes(bytes);
+        for (i=0; i < bytes.length; i++) {
+            int randval = bytes[i] & 0xff;
+            pw[i] = chars[randval % chars.length];
+        }
+        return String.valueOf(pw);
     }
 
     public String getRedirectUrl(String relayState)
@@ -106,6 +138,27 @@ public class SAMLAuthenticator extends JiraSeraphAuthenticator
 
         String username = aset.getNameId();
         logger.debug("SAML user: " + username);
+
+        UserUtil userUtil = new ComponentAccessor().getUserUtil();
+        if (!userUtil.userExists(username)) {
+
+            String email = username;
+            String fullname = username;
+
+            List<String> namelist = aset.getAttributes().get("Name");
+            if (namelist != null && !namelist.isEmpty())
+                fullname = namelist.get(0);
+
+            String password = generatePassword(20);
+
+            try {
+                userUtil.createUserWithNotification(username, password,
+                    email, fullname, UserEventType.USER_CREATED);
+            } catch (JiraException e) {
+                logger.error("Unable to auto-create user", e);
+                return null;
+            }
+        }
 
         Principal p = getUser(username);
         putPrincipalInSessionContext(request, p);
