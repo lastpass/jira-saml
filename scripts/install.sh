@@ -41,7 +41,7 @@ if [[ $keep_going == 'N' || $keep_going == 'n' ]]; then
     exit 1
 fi
 
-cd opt/atlassian/jira
+cd ${defroot:1}
 
 echo "Copying files..."
 cp -bvdpr -S .orig --no-preserve=ownership . $ATLASSIAN_HOME
