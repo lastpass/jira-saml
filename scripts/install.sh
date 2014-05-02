@@ -43,6 +43,9 @@ fi
 
 cd ${defroot:1}
 
+echo "Removing existing plugin jars..."
+rm -vf $ATLASSIAN_HOME/atlassian-jira/WEB-INF/lib/lastpass-jira-saml-*
+
 echo "Copying files..."
 cp -bvdpr -S .orig --no-preserve=ownership . $ATLASSIAN_HOME
 
