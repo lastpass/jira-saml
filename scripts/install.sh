@@ -45,7 +45,6 @@ cd ${defroot:1}
 
 echo "Copying files..."
 cp -bvdpr -S .orig --no-preserve=ownership . $ATLASSIAN_HOME
-install -S .orig -v . $ATLASSIAN_HOME/
 
 # remove joda-time conflict (now in tomcat libdir)
 mv -v $ATLASSIAN_HOME/atlassian-jira/WEB-INF/lib/joda-time-2.3.jar{,.orig}
