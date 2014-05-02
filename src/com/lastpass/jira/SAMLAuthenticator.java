@@ -38,6 +38,7 @@ import com.atlassian.jira.JiraException;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
+import java.util.ArrayList;
 
 import com.atlassian.jira.security.login.JiraSeraphAuthenticator;
 import java.net.URLEncoder;
@@ -58,9 +59,41 @@ public class SAMLAuthenticator extends JiraSeraphAuthenticator
     {
         SAMLInit.initialize();
 
-        IdPConfig idpConfig = new IdPConfig(new File("idp-metadata.xml"));
-        SPConfig spConfig = new SPConfig(new File("sp-metadata.xml"));
+        String dir = findMetadataDir();
+        if (dir == null)
+            throw new SAMLException("Unable to locate SAML metadata");
+
+        IdPConfig idpConfig = new IdPConfig(new File(dir + "/idp-metadata.xml"));
+        SPConfig spConfig = new SPConfig(new File(dir + "/sp-metadata.xml"));
         client = new SAMLClient(spConfig, idpConfig);
+    }
+
+    /**
+     *  Look for the directory that contains *-metadata.xml.
+     *
+     *  We look in the catalina.base directory first, then make some
+     *  wild guesses.
+     */
+    private String findMetadataDir()
+    {
+        String[] dirs = {
+            System.getProperty("catalina.base", "."),
+            ".",
+            "..",
+        };
+        List<String> attempted = new ArrayList<String>();
+
+        for (String dir : dirs) {
+            File path = new File(dir + "/idp-metadata.xml");
+            attempted.add(path.getAbsolutePath());
+            if (path.exists())
+                return dir;
+        }
+
+        // no dice
+        logger.error("Unable to locate SAML metadata, tried " +
+                     attempted);
+        return null;
     }
 
     /**
