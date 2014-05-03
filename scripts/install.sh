@@ -69,7 +69,7 @@ First rename them appropriately:
 And then edit the xml files to reflect your entity ID
 and URLs.
 
-If you are use the LastPass IdP service, you may
+If you are using the LastPass IdP service, you may
 download the idp-metadata.xml file for your organization
 here:
 
