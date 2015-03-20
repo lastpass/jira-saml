@@ -9,10 +9,13 @@
 
                 If '${originalurl}' is present in the URL, it will be replaced with the URL that the user requested.
                 This gives SSO login pages the chance to redirect to the original page
+
+                '${pageCaps}' should be supported accordingly to com.atlassian.sal.api.page.PageCapability
+
+                '${userRole}' when specified, should cause logout after login to an user with privileges lesser than requested
             -->
             <param-name>login.url</param-name>
-            <param-value>/saml_login.jsp?permissionViolation=true&amp;os_destination=${originalurl}</param-value>
-            <!--<param-value>/login.jsp?permissionViolation=true&amp;os_destination=${originalurl}</param-value>-->
+            <param-value>/saml_login.jsp?permissionViolation=true&amp;os_destination=${originalurl}&amp;page_caps=${pageCaps}&amp;user_role=${userRole}</param-value>
             <!--<param-value>http://sso.mycompany.com/login?redirectTo=${originalurl}</param-value>-->
         </init-param>
         <init-param>
@@ -103,12 +106,7 @@
     <authenticator class="com.lastpass.jira.SAMLAuthenticator"/>
     <!-- NB: the URL to redirect to is now specified by login.url above -->
     <services>
-        <service class="com.atlassian.seraph.service.PathService">
-            <init-param>
-                <param-name>config.file</param-name>
-                <param-value>seraph-paths.xml</param-value>
-            </init-param>
-        </service>
+        <service class="com.atlassian.jira.security.JiraPathService" />
 
         <service class="com.atlassian.seraph.service.WebworkService">
             <init-param>
@@ -117,15 +115,14 @@
             </init-param>
         </service>
 
-        <service class="com.atlassian.jira.plugin.webwork.JiraSeraphSecurityService">
-        </service>
+        <service class="com.atlassian.jira.plugin.webwork.JiraSeraphSecurityService" />
     </services>
     
     <rolemapper class="com.atlassian.jira.security.JiraRoleMapper"/>
 
     <elevatedsecurityguard class="com.atlassian.jira.security.login.JiraElevatedSecurityGuard"/>
-    
+
     <interceptors>
-        <interceptor class="com.atlassian.jira.user.preferences.UserPreferencesResetInterceptor"/>
+        <interceptor class="com.atlassian.jira.web.filters.JiraLoginInterceptor" />
     </interceptors>
 </security-config>
