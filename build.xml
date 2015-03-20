@@ -116,7 +116,7 @@
         </copy>
 
         <copy todir="${DESTDIR}${jira.home.dir}/atlassian-jira/">
-            <fileset dir="web" includes="*.jsp"/>
+            <fileset dir="web" includes="**/*.jsp"/>
         </copy>
 
         <exec executable="sed" output="${DESTDIR}/install.sh">
