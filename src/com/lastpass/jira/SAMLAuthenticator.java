@@ -30,7 +30,8 @@ import java.security.SecureRandom;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.atlassian.jira.user.util.UserUtil;
+import com.atlassian.jira.user.UserDetails;
+import com.atlassian.jira.user.util.UserManager;
 import com.atlassian.jira.event.user.UserEventType;
 import com.atlassian.jira.component.ComponentAccessor;
 import com.atlassian.jira.JiraException;
@@ -172,8 +173,9 @@ public class SAMLAuthenticator extends JiraSeraphAuthenticator
         String username = aset.getNameId();
         logger.debug("SAML user: " + username);
 
-        UserUtil userUtil = new ComponentAccessor().getUserUtil();
-        if (!userUtil.userExists(username)) {
+        UserManager userManager = new ComponentAccessor().getUserManager();
+
+        if (userManager.getUserByName(username) == null) {
 
             String email = username;
             String fullname = username;
@@ -184,16 +186,18 @@ public class SAMLAuthenticator extends JiraSeraphAuthenticator
 
             String password = generatePassword(20);
 
+            UserDetails details = new UserDetails(email, fullname)
+                .withPassword(password);
+
             try {
-                userUtil.createUserWithNotification(username, password,
-                    email, fullname, UserEventType.USER_CREATED);
+                userManager.createUser(details);
             } catch (JiraException e) {
                 logger.error("Unable to auto-create user", e);
                 return null;
             }
         }
 
-        Principal p = getUser(username);
+        Principal p = userManager.getUserByName(username);
         putPrincipalInSessionContext(request, p);
         return p;
     }
