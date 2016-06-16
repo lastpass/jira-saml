@@ -129,13 +129,8 @@
             <arg value="${DESTDIR}/install.sh" />
         </exec>
 
-        <copy todir="${DESTDIR}${jira.home.dir}/atlassian-jira/WEB-INF/lib/"
-            file="${output.dir}/${output.jar}"/>
-
-        <copy todir="${DESTDIR}${jira.home.dir}/atlassian-jira/WEB-INF/classes/"
-            file="${conf.dir}/seraph-config.xml"/>
-
-        <copy todir="${DESTDIR}${jira.home.dir}/lib/">
+        <copy todir="${DESTDIR}${jira.home.dir}/atlassian-jira/WEB-INF/lib/">
+            <fileset file="${output.dir}/${output.jar}"/>
             <fileset dir="lib">
                 <include name="opensaml-2.6.1.jar"/>
                 <include name="xmltooling-1.4.1.jar"/>
@@ -145,6 +140,10 @@
                 <include name="esapi-2.0.1.jar"/>
             </fileset>
         </copy>
+
+        <copy todir="${DESTDIR}${jira.home.dir}/atlassian-jira/WEB-INF/classes/"
+            file="${conf.dir}/seraph-config.xml"/>
+
     </target>
 
 <!-- bootstrap ivy -->
