@@ -9,7 +9,8 @@ What do I need to use it?
 -------------------------
 
 You will need a recent hosted Atlassian JIRA installation.  This
-has been tested with version 6.4.
+has been tested with JIRA 7.1.7.  Previous releases of this plugin
+may be needed for older versions of JIRA.
 
 You will also need a SAML IdP provider.  If you do not have one,
 we suggest our own IdP service, part of LastPass Enterprise,
