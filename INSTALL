@@ -1,13 +1,14 @@
-To install from source, first generate the installation
-package:
+From a tarball release, unpack the archive and run:
 
-  ant tar
+    sudo ./install.sh
 
-Then uncompress the resulting .tar.gz file from the out
-directory, and run the install script.
+To install from source, build the java classes with ant
+and run the install target:
 
-Optionally, you may use the appropriate ant targets to
-generate debian or rpm packages.
+    ant && sudo ant install
+
+Alternatively, use your distribution's normal package
+manager to install rpm or debian packages.
 
 After installation, you will need to configure the
 Service Provider and Identity Provider settings in the

@@ -15,21 +15,20 @@ You will also need a SAML IdP provider.  If you do not have one,
 we suggest our own IdP service, part of LastPass Enterprise,
 at https://lastpass.com/.
 
-Building the Plugin from Source
--------------------------------
+Installing the Plugin from Source
+----------------------------------
 
 You must first install Atlassian JIRA, and set the jira.home.dir
 in the build.xml to match its location.
 
-Run ant to generate a binary tarball with the proper libraries:
+Once done, build and install the application as follows:
+```
+    $ ant && sudo ant install
+```
 
-    $ ant
+Optionally, you may instead build tar, rpm, and deb release
+packages using the appropriate ant targets, and install them as
+directed in the INSTALL file.
 
-This will download dependencies with ivy and then build the class
-files.  The resulting tarball will reside in the out/ directory.
-
-Installing the Plugin
----------------------
-
-Once built, extract the tarball somewhere and run the install.sh
-script.  See the INSTALL file for details.
+Please see INSTALL for additional instructions for setting up
+the IdP and SP metadata.
