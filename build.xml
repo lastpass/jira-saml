@@ -50,7 +50,7 @@
         </jar>
     </target>
 
-    <target name="fpm">
+    <target name="fpm" depends="jar">
         <antcall target="__install">
           <param name="DESTDIR" value="pkg-stage"/>
         </antcall>
@@ -92,7 +92,7 @@
         </antcall>
     </target>
 
-    <target name="tar">
+    <target name="tar" depends="jar">
         <antcall target="__install">
           <param name="DESTDIR" value="${output.dir}/${ant.project.name}-${version}/"/>
         </antcall>
@@ -106,7 +106,14 @@
         <delete dir="${output.dir}/${ant.project.name}-${version}/"/>
     </target>
 
-    <target name="__install" depends="jar">
+    <target name="install">
+        <antcall target="__install">
+          <param name="DESTDIR" value="${output.dir}/${ant.project.name}-${version}/"/>
+        </antcall>
+        <exec executable="./install.sh" dir="${output.dir}/${ant.project.name}-${version}"/>
+    </target>
+
+    <target name="__install">
         <mkdir dir="${DESTDIR}${jira.home.dir}/atlassian-jira/WEB-INF/classes"/>
         <mkdir dir="${DESTDIR}${jira.home.dir}/atlassian-jira/WEB-INF/lib"/>
         <mkdir dir="${DESTDIR}${jira.home.dir}/lib"/>
