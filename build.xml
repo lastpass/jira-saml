@@ -103,13 +103,9 @@
             <arg value="${output.dir}"/>
             <arg value="${ant.project.name}-${version}/"/>
         </exec>
-        <delete dir="${output.dir}/${ant.project.name}-${version}/"/>
     </target>
 
     <target name="install">
-        <antcall target="__install">
-          <param name="DESTDIR" value="${output.dir}/${ant.project.name}-${version}/"/>
-        </antcall>
         <exec executable="./install.sh" dir="${output.dir}/${ant.project.name}-${version}"/>
     </target>
 
