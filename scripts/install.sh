@@ -10,8 +10,6 @@ function remove_servlet_mapping
     local jsp_name=$1
     local web_xml=$ATLASSIAN_HOME/atlassian-jira/WEB-INF/web.xml
 
-    cp $web_xml{,~}
-
     # This sed script does:
     #
     #  1) on each line matching jsp_name, copy pattern and subsequent two
@@ -23,10 +21,62 @@ function remove_servlet_mapping
     #     keeping current line in hold buffer so that we can back up by one
     #     line)
     #
+    cp $web_xml{,~}
     cat $web_xml~ | \
         sed -n '/<servlet-name>'$jsp_name'/{i <!--
                 N;N;H;g;a -->
                 p;s/.*//;h;d};x;1!p;${x;p}' > $web_xml
+    rm $web_xml~
+}
+
+function remove_servlet_mappings
+{
+    local web_xml=$ATLASSIAN_HOME/atlassian-jira/WEB-INF/web.xml
+    local modstr="<!-- LastPass modified -->"
+
+    grep -q "$modstr" $web_xml
+    if [[ $? -eq 0 ]]; then
+        echo "web.xml already modified, not making changes."
+        return
+    fi
+
+    remove_servlet_mapping jsp.includes.loginform_jsp
+    remove_servlet_mapping jsp.includes.loginpage_jsp
+    remove_servlet_mapping jsp.login_jsp
+
+    echo $modstr >> $web_xml
+}
+
+# Customize login gadget to include a saml login button.
+# See: https://confluence.atlassian.com/jirakb/how-to-customise-the-login-gadget-225122084.html
+#
+function update_login_gadget
+{
+    local jar_name=$1
+    local login_soy=static/dashboarditem/login/login.soy
+    local modstr="<!-- LastPass modified -->"
+    local tmpdir=jira-gadgets-update
+
+    (
+        mkdir -p $tmpdir
+        cd $tmpdir
+
+        jar xf $jar_name
+
+        grep -q "$modstr" $login_soy
+        if [[ $? -eq 0 ]]; then
+            echo "login.soy already modified, not making changes."
+            cd .. && rm -rf $tmpdir
+            exit
+        fi
+
+        cp $login_soy{,~}
+        cat $login_soy~ | \
+            sed -e 's,\(<input.*id="login".*\),\1<br/><input class="button" id="saml-login" name="saml-login" type="submit" value="Log In with SAML" onclick="window.location='"'"'/saml_login.jsp'"'"'; return false;"/>'"$modstr"',' > $login_soy
+        rm $login_soy~
+        jar cfm $jar_name META-INF/MANIFEST.MF ./*
+        cd .. && rm -rf $tmpdir
+    )
 }
 
 defroot=/opt/atlassian/jira
@@ -76,6 +126,7 @@ cp -bvdpr -S .orig --no-preserve=ownership . $ATLASSIAN_HOME
 # remove joda-time conflict (now in tomcat libdir)
 mv -v $ATLASSIAN_HOME/atlassian-jira/WEB-INF/lib/joda-time-2.3.jar{,.orig}
 
+echo "Adding SAML Login buttons"
 # append "Login with SAML" button
 cp $ATLASSIAN_HOME/atlassian-jira/includes/loginform.jsp{,.orig}
 cat $ATLASSIAN_HOME/atlassian-jira/includes/loginform.append.jsp >> $ATLASSIAN_HOME/atlassian-jira/includes/loginform.jsp
@@ -83,10 +134,14 @@ rm -vf $ATLASSIAN_HOME/atlassian-jira/includes/loginform.append.jsp
 
 # Starting with Jira 7+, we have to remove from web.xml any servlet stanzas
 # that refer to scripts that include the modified loginform.jsp
-cp $ATLASSIAN_HOME/atlassian-jira/includes/web.xml{,.orig}
-remove_servlet_mapping jsp.includes.loginform_jsp
-remove_servlet_mapping jsp.includes.loginpage_jsp
-remove_servlet_mapping jsp.login_jsp
+cp $ATLASSIAN_HOME/atlassian-jira/WEB-INF/web.xml{,.orig}
+remove_servlet_mappings
+
+# update login gadget
+for f in $ATLASSIAN_HOME/atlassian-jira/WEB-INF/atlassian-bundled-plugins/jira-gadgets-plugin*.jar; do
+    cp $f $f.orig
+    update_login_gadget $f
+done
 
 cd -
 
