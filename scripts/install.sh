@@ -5,6 +5,30 @@
 # by the ant targets of the same name.
 #
 
+function remove_servlet_mapping
+{
+    local jsp_name=$1
+    local web_xml=$ATLASSIAN_HOME/atlassian-jira/WEB-INF/web.xml
+
+    cp $web_xml{,~}
+
+    # This sed script does:
+    #
+    #  1) on each line matching jsp_name, copy pattern and subsequent two
+    #     lines into hold buffer, and print the lot surrounded by xml
+    #     comments
+    #
+    #  2) on every other line, and twice on last line, swap pattern and
+    #     hold buffer and print hold buffer (i.e. print previous line,
+    #     keeping current line in hold buffer so that we can back up by one
+    #     line)
+    #
+    cat $web_xml~ | \
+        sed -n '/<servlet-name>'$jsp_name'/{i <!--
+                N;N;H;g;a -->
+                p;s/.*//;h;d};x;1!p;${x;p}' > $web_xml
+}
+
 defroot=/opt/atlassian/jira
 
 if [[ $UID -ne 0 ]]; then
@@ -56,6 +80,13 @@ mv -v $ATLASSIAN_HOME/atlassian-jira/WEB-INF/lib/joda-time-2.3.jar{,.orig}
 cp $ATLASSIAN_HOME/atlassian-jira/includes/loginform.jsp{,.orig}
 cat $ATLASSIAN_HOME/atlassian-jira/includes/loginform.append.jsp >> $ATLASSIAN_HOME/atlassian-jira/includes/loginform.jsp
 rm -vf $ATLASSIAN_HOME/atlassian-jira/includes/loginform.append.jsp
+
+# Starting with Jira 7+, we have to remove from web.xml any servlet stanzas
+# that refer to scripts that include the modified loginform.jsp
+cp $ATLASSIAN_HOME/atlassian-jira/includes/web.xml{,.orig}
+remove_servlet_mapping jsp.includes.loginform_jsp
+remove_servlet_mapping jsp.includes.loginpage_jsp
+remove_servlet_mapping jsp.login_jsp
 
 cd -
 
