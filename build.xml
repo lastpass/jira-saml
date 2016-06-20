@@ -46,7 +46,7 @@
         <mkdir dir="${output.dir}" />
         <jar destfile="${output.dir}/${output.jar}">
             <fileset dir="${classes.dir}"/>
-            <zipfileset includes="**/*.class" src="lib/lastpass-saml-sdk-0.2.0.jar"/>
+            <zipfileset includes="**/*.class" src="lib/lastpass-saml-sdk-0.3.0.jar"/>
         </jar>
     </target>
 

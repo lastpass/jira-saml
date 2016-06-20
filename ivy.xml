@@ -5,8 +5,8 @@
         <dependency org="org.opensaml" name="opensaml" rev="2.6.1"/>
         <dependency org="javax.servlet" name="servlet-api" rev="2.5"/>
         <dependency org="org.slf4j" name="slf4j-log4j12" rev="1.2"/>
-        <dependency org="lastpass" name="saml-sdk-java" rev="0.2.0">
-            <artifact name="lastpass-saml-sdk" type="jar" url="https://github.com/lastpass/saml-sdk-java/releases/download/v0.2.0/lastpass-saml-sdk-0.2.0.jar" />
+        <dependency org="lastpass" name="saml-sdk-java" rev="0.3.0">
+            <artifact name="lastpass-saml-sdk" type="jar" url="https://github.com/lastpass/saml-sdk-java/releases/download/v0.3.0/lastpass-saml-sdk-0.3.0.jar" />
         </dependency>
     </dependencies>
 </ivy-module>
